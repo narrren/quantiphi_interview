@@ -68,3 +68,46 @@ Response:
 ```
 grade: ≥80 Excellent, ≥60 Strong, ≥40 Moderate, else Low. If JD contains no known tech keyword →
 match_percentage 0, grade "Low", summary explains. Last JD saved to settings `last_job_description`.
+
+---------------------------------------------------------------------------------------------------
+# v2 additions
+
+## Repository object — new fields (added to GET /api/portfolio repositories[])
+`"license": "MIT" | null` (spdx_id or name), `"homepage": "https://..." | null`, `"archived": false`, `"open_issues": 3`
+
+## GET /api/insights/{username}?refresh=false  — Developer Insights + Portfolio Readiness
+```json
+{
+  "activity": {
+    "weekday_totals": [ {"day": "Sun", "total": 120, "average": 2.3} ],          // 7 items Sun..Sat
+    "monthly": [ {"month": "2026-01", "label": "Jan 2026", "total": 310} ],       // last 12 months, oldest first
+    "active_days": 210, "total_days": 366, "consistency_percentage": 57.4,
+    "average_per_active_day": 4.2, "most_active_weekday": "Tue" | null,
+    "trend": {"last_30_days": 80, "previous_30_days": 60, "change_percentage": 33.3 | null, "direction": "up | down | flat"}
+  },
+  "readiness": {
+    "score": 72, "grade": "Excellent | Strong | Moderate | Low",
+    "checks": [ {"id": "profile_bio", "label": "Profile has a bio", "passed": true, "detail": "..."} ],
+    "recommendations": ["Add a license to 5 repositories (e.g. repo-a, repo-b) ..."],
+    "repositories": [ {"name": "repo-a", "score": 80, "issues": ["No license"]} ]   // top 6 non-fork by stars
+  }
+}
+```
+
+## GET /api/compare?users=alice,bob  — Compare Developers (exactly 2 distinct valid usernames, else 422)
+```json
+{
+  "developers": [
+    {"login": "alice", "name": "Alice", "avatar_url": "...", "html_url": "...", "followers": 10, "total_stars": 50,
+     "total_forks": 5, "total_repos": 12, "top_language": "Python" | null, "total_contributions": 900,
+     "current_streak": 3, "longest_streak": 20}
+  ],
+  "metrics": [ {"key": "followers", "label": "Followers", "values": [10, 20], "leader": "bob" | null} ],  // null on tie
+  "shared_languages": ["Python"],
+  "summary": "bob leads in 4 of 7 metrics."
+}
+```
+
+## GET /api/badge/{username}?metric=stars|followers|contributions|streak|top_language&style=flat
+Returns `image/svg+xml` shields-style badge (label | value), e.g. "GitHub stars | 268.2K".
+Cache-Control: public, max-age=3600. Unknown metric → 422. User not found → still 404 JSON.
