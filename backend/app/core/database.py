@@ -51,14 +51,6 @@ CREATE TABLE IF NOT EXISTS settings (
     value       TEXT NOT NULL               -- JSON encoded value
 );
 
-CREATE TABLE IF NOT EXISTS chat_messages (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    username    TEXT NOT NULL COLLATE NOCASE,
-    role        TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
-    content     TEXT NOT NULL,
-    created_at  TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_chat_username ON chat_messages(username);
 """
 
 

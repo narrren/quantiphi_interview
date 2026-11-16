@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.errors import AppError
-from app.routers import chat, match, pitch, portfolio, user_settings
+from app.routers import match, portfolio, user_settings
 
 
 @asynccontextmanager
@@ -43,8 +43,6 @@ def health() -> dict[str, str]:
 app.include_router(portfolio.router, prefix="/api")
 app.include_router(user_settings.router, prefix="/api")
 app.include_router(match.router, prefix="/api")
-app.include_router(chat.router, prefix="/api")
-app.include_router(pitch.router, prefix="/api")
 
 # Serve the production frontend build (single-process deployment) when present.
 if settings.frontend_dist.is_dir():
