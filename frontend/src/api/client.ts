@@ -1,4 +1,4 @@
-import type { MatchResult, Portfolio, Settings } from '../types';
+import type { BadgeMetric, CompareResult, Insights, MatchResult, Portfolio, Settings } from '../types';
 
 export class ApiError extends Error {
   status: number;
@@ -92,7 +92,14 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ username, job_description }),
     }),
+  getInsights: (username: string, refresh = false) =>
+    request<Insights>(`/insights/${enc(username)}?refresh=${refresh ? 'true' : 'false'}`),
+  compareDevelopers: (a: string, b: string) => request<CompareResult>(`/compare?users=${enc(a)},${enc(b)}`),
 };
+
+export function badgeUrl(username: string, metric: BadgeMetric): string {
+  return `/api/badge/${enc(username)}?metric=${metric}`;
+}
 
 export function errorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;

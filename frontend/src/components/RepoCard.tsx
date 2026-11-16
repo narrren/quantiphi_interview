@@ -1,6 +1,6 @@
 import type { Repository } from '../types';
 import { formatNumber, relativeTime } from '../format';
-import { ForkIcon, RepoIcon, StarIcon } from './Icons';
+import { ForkIcon, LinkIcon, RepoIcon, StarIcon } from './Icons';
 
 export function RepoCard({ repo }: { repo: Repository }) {
   const topics = repo.topics.slice(0, 4);
@@ -12,6 +12,19 @@ export function RepoCard({ repo }: { repo: Repository }) {
           {repo.name}
         </a>
         {repo.is_fork && <span className="badge">Fork</span>}
+        {repo.archived && <span className="pill pill-warn pill-sm">Archived</span>}
+        {repo.homepage && (
+          <a
+            className="repo-homepage"
+            href={repo.homepage}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`${repo.name} homepage`}
+            title={repo.homepage}
+          >
+            <LinkIcon />
+          </a>
+        )}
       </div>
       <p className={repo.description ? 'repo-desc' : 'repo-desc muted italic'}>
         {repo.description || 'No description provided'}
@@ -39,6 +52,11 @@ export function RepoCard({ repo }: { repo: Repository }) {
         <span title={`${formatNumber(repo.forks)} forks`}>
           <ForkIcon /> {formatNumber(repo.forks)}
         </span>
+        {repo.license && (
+          <span className="license-chip" title={`License: ${repo.license}`}>
+            {repo.license}
+          </span>
+        )}
         {repo.updated_at && <span className="repo-updated">Updated {relativeTime(repo.updated_at)}</span>}
       </div>
     </article>

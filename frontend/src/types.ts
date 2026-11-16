@@ -40,6 +40,10 @@ export interface Repository {
   topics: string[];
   updated_at: string | null;
   is_fork: boolean;
+  license?: string | null;
+  homepage?: string | null;
+  archived?: boolean;
+  open_issues?: number;
 }
 
 export interface ContributionDay {
@@ -104,3 +108,90 @@ export interface MatchResult {
   jd_keywords_count: number;
   summary: string;
 }
+
+export interface WeekdayTotal {
+  day: string;
+  total: number;
+  average: number;
+}
+
+export interface MonthlyTotal {
+  month: string;
+  label: string;
+  total: number;
+}
+
+export type TrendDirection = 'up' | 'down' | 'flat';
+
+export interface ActivityInsights {
+  weekday_totals: WeekdayTotal[];
+  monthly: MonthlyTotal[];
+  active_days: number;
+  total_days: number;
+  consistency_percentage: number;
+  average_per_active_day: number;
+  most_active_weekday: string | null;
+  trend: {
+    last_30_days: number;
+    previous_30_days: number;
+    change_percentage: number | null;
+    direction: TrendDirection;
+  };
+}
+
+export interface ReadinessCheck {
+  id: string;
+  label: string;
+  passed: boolean;
+  detail: string;
+}
+
+export interface RepoHealth {
+  name: string;
+  score: number;
+  issues: string[];
+}
+
+export interface Readiness {
+  score: number;
+  grade: Grade;
+  checks: ReadinessCheck[];
+  recommendations: string[];
+  repositories: RepoHealth[];
+}
+
+export interface Insights {
+  activity: ActivityInsights;
+  readiness: Readiness;
+}
+
+export interface CompareDeveloper {
+  login: string;
+  name: string | null;
+  avatar_url: string | null;
+  html_url: string;
+  followers: number;
+  total_stars: number;
+  total_forks: number;
+  total_repos: number;
+  top_language: string | null;
+  total_contributions: number;
+  current_streak: number;
+  longest_streak: number;
+}
+
+export interface CompareMetric {
+  key: string;
+  label: string;
+  values: number[];
+  leader: string | null;
+}
+
+export interface CompareResult {
+  developers: CompareDeveloper[];
+  metrics: CompareMetric[];
+  shared_languages: string[];
+  summary: string;
+}
+
+export type BadgeMetric = 'stars' | 'followers' | 'contributions' | 'streak' | 'top_language';
