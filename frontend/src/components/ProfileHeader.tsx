@@ -1,6 +1,6 @@
 import type { CacheInfo, MatchResult, Profile, Stats } from '../types';
 import { formatCompact, formatNumber, formatTime, normalizeUrl } from '../format';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ForkIcon, LinkIcon, LocationIcon, OrgIcon, PeopleIcon, PersonIcon, RepoIcon, StarIcon } from './Icons';
 
 interface Props {
@@ -45,6 +45,10 @@ function StatTile({ icon, label, value }: { icon: ReactNode; label: string; valu
 }
 
 export function ProfileHeader({ profile, stats, cache, match }: Props) {
+  // Track which avatar URL failed so a new profile retries its own image.
+  const [failedAvatar, setFailedAvatar] = useState<string | null>(null);
+  const showAvatar = Boolean(profile.avatar_url) && failedAvatar !== profile.avatar_url;
+
   return (
     <section className="card profile" aria-labelledby="profile-name">
       {match && (
@@ -61,8 +65,15 @@ export function ProfileHeader({ profile, stats, cache, match }: Props) {
       )}
 
       <div className="profile-main">
-        {profile.avatar_url ? (
-          <img className="avatar" src={profile.avatar_url} alt={`${profile.login} avatar`} width={96} height={96} />
+        {showAvatar && profile.avatar_url ? (
+          <img
+            className="avatar"
+            src={profile.avatar_url}
+            alt={`${profile.login} avatar`}
+            width={96}
+            height={96}
+            onError={() => setFailedAvatar(profile.avatar_url)}
+          />
         ) : (
           <div className="avatar avatar-fallback" aria-hidden>
             {profile.login.slice(0, 1).toUpperCase()}

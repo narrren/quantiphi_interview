@@ -16,7 +16,7 @@ chart, and a **Tech Stack Compatibility** score against any job description.
 | | **SQLite caching engine** — repository metadata, profile, contributions and user settings cached locally with a configurable TTL; stale cache is served if GitHub is rate-limited or unreachable |
 | Vibe Check | **Tech Stack Compatibility** — paste a job description; the backend extracts tech keywords (60+ technology taxonomy with aliases, e.g. `golang`, `reactjs`, `c#`) and compares them against the languages/topics of the user's cached repos → **Match Percentage badge** at the top of the profile with matched / missing skills and evidence repos |
 
-### Advanced features
+### Advanced features (behind the "Explore advanced features" button)
 
 | Feature | Why it matters |
 |---|---|

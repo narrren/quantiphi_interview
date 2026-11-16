@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api/client';
 import { usePortfolio } from './hooks/usePortfolio';
 import { useInsights } from './hooks/useInsights';
@@ -10,7 +10,7 @@ import { ContributionHeatmap } from './components/ContributionHeatmap';
 import { JobMatchPanel } from './components/JobMatchPanel';
 import { RepoGrid } from './components/RepoGrid';
 import { DashboardSkeleton, ErrorCard } from './components/States';
-import { GitHubIcon } from './components/Icons';
+import { ChevronDownIcon, GitHubIcon } from './components/Icons';
 import { InsightsPanel } from './components/InsightsPanel';
 import { ReadinessPanel } from './components/ReadinessPanel';
 import { SharePanel } from './components/SharePanel';
@@ -18,26 +18,25 @@ import { CompareView } from './components/CompareView';
 
 const FALLBACK_USERNAME = 'octocat';
 
-type View = 'overview' | 'compare';
-
 function readQuery() {
   const q = new URLSearchParams(window.location.search);
   const user = q.get('user')?.trim().replace(/^@/, '') || null;
   const raw = q.get('compare');
   const parts = raw ? raw.split(',').map((p) => p.trim()).filter(Boolean) : [];
   const compare: [string, string] | null = parts.length === 2 ? [parts[0], parts[1]] : null;
-  const view: View = raw !== null || q.get('view') === 'compare' ? 'compare' : 'overview';
-  return { user, compare, view };
+  // Deep links to an advanced feature open the advanced section directly.
+  const advanced = raw !== null || q.get('advanced') === '1';
+  return { user, compare, advanced };
 }
 
 const initialQuery = readQuery();
 
-function writeQuery(user: string | null, view: View, compare: [string, string] | null) {
+function writeQuery(user: string | null, advanced: boolean, compare: [string, string] | null) {
   const q = new URLSearchParams();
   if (user) q.set('user', user);
-  if (view === 'compare') {
+  if (advanced) {
     if (compare) q.set('compare', compare.join(','));
-    else q.set('view', 'compare');
+    else q.set('advanced', '1');
   }
   const search = q.toString();
   const next = `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`;
@@ -52,14 +51,16 @@ function applyTheme(theme: Theme) {
 
 export default function App() {
   const [username, setUsername] = useState<string | null>(initialQuery.user);
-  const [view, setView] = useState<View>(initialQuery.view);
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(initialQuery.advanced);
+  const advancedRef = useRef<HTMLElement>(null);
   const [comparePair, setComparePair] = useState<[string, string] | null>(initialQuery.compare);
   const [theme, setTheme] = useState<Theme>('dark');
   const [jobDescription, setJobDescription] = useState('');
   const [match, setMatch] = useState<MatchResult | null>(null);
   const { data, loading, refreshing, error, status, reload } = usePortfolio(username);
   const loadedLogin = data?.profile.login ?? null;
-  const insights = useInsights(loadedLogin);
+  // Advanced insights are fetched lazily, only once the advanced section is opened.
+  const insights = useInsights(showAdvanced ? loadedLogin : null);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,7 +83,18 @@ export default function App() {
 
   useEffect(() => applyTheme(theme), [theme]);
 
-  useEffect(() => writeQuery(username, view, comparePair), [username, view, comparePair]);
+  useEffect(() => writeQuery(username, showAdvanced, comparePair), [username, showAdvanced, comparePair]);
+
+  const toggleAdvanced = () => {
+    const next = !showAdvanced;
+    setShowAdvanced(next);
+    if (next) {
+      // Wait for the section to render, then scroll it into view.
+      window.requestAnimationFrame(() =>
+        advancedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+      );
+    }
+  };
 
   // Persist the successfully loaded username as the default.
   useEffect(() => {
@@ -115,72 +127,31 @@ export default function App() {
         theme={theme}
         refreshing={refreshing}
         canRefresh={Boolean(data)}
-        onLoad={(u) => {
-          handleLoad(u);
-          setView('overview');
-        }}
+        onLoad={handleLoad}
         onRefresh={() => {
           void reload(true);
-          void insights.reload(true);
+          if (showAdvanced) void insights.reload(true);
         }}
         onToggleTheme={toggleTheme}
       />
 
-      <nav className="view-tabs" aria-label="Views">
-        <div className="container view-tabs-inner" role="tablist">
-          {(['overview', 'compare'] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              role="tab"
-              aria-selected={view === v}
-              className={`view-tab ${view === v ? 'active' : ''}`}
-              onClick={() => setView(v)}
-            >
-              {v === 'overview' ? 'Overview' : 'Compare'}
-            </button>
-          ))}
-        </div>
-      </nav>
-
       <main className="container main">
-        {view === 'compare' && (
-          <CompareView
-            defaultA={loadedLogin ?? username ?? ''}
-            initial={comparePair}
-            onCompared={(a, b) => setComparePair([a, b])}
-          />
-        )}
-        {view === 'overview' && error && !data && <ErrorCard message={error} status={status} onRetry={() => void reload(false)} />}
-        {view === 'overview' && error && data && (
+        {error && !data && <ErrorCard message={error} status={status} onRetry={() => void reload(false)} />}
+        {error && data && (
           <div className="alert alert-error" role="alert">
             Refresh failed: {error}
           </div>
         )}
-        {view === 'overview' && (loading || !username) && !data && !error && <DashboardSkeleton />}
+        {(loading || !username) && !data && !error && <DashboardSkeleton />}
 
-        {view === 'overview' && data && (
+        {data && (
           <div className={`dashboard ${loading ? 'is-loading' : ''}`}>
+            {/* Core dashboard — the features defined in the problem statement. */}
             <ProfileHeader profile={data.profile} stats={data.stats} cache={data.cache} match={match} />
 
             <div className="row row-charts">
               <LanguagePieChart languages={data.stats.top_languages} />
               <ContributionHeatmap contributions={data.contributions} />
-            </div>
-
-            <InsightsPanel
-              activity={insights.data?.activity ?? null}
-              loading={insights.loading}
-              error={insights.error}
-            />
-
-            <div className="row row-2col">
-              <ReadinessPanel
-                readiness={insights.data?.readiness ?? null}
-                loading={insights.loading}
-                error={insights.error}
-              />
-              <SharePanel username={data.profile.login} />
             </div>
 
             <JobMatchPanel
@@ -192,6 +163,53 @@ export default function App() {
             />
 
             <RepoGrid repos={data.repositories} />
+
+            <div className="advanced-toggle-wrap">
+              <button
+                type="button"
+                className={`advanced-toggle ${showAdvanced ? 'open' : 'closed'}`}
+                aria-expanded={showAdvanced}
+                aria-controls="advanced-features"
+                onClick={toggleAdvanced}
+              >
+                {showAdvanced ? 'Hide advanced features' : 'Explore advanced features'}
+                <span className="chevron">
+                  <ChevronDownIcon />
+                </span>
+              </button>
+              {!showAdvanced && (
+                <span className="advanced-hint">
+                  Developer Insights · Portfolio Readiness · Share &amp; Embed · Compare Developers
+                </span>
+              )}
+            </div>
+
+            {showAdvanced && (
+              <section id="advanced-features" ref={advancedRef} className="advanced-section" aria-label="Advanced features">
+                <div className="advanced-heading">Advanced features</div>
+
+                <InsightsPanel
+                  activity={insights.data?.activity ?? null}
+                  loading={insights.loading}
+                  error={insights.error}
+                />
+
+                <div className="row row-2col">
+                  <ReadinessPanel
+                    readiness={insights.data?.readiness ?? null}
+                    loading={insights.loading}
+                    error={insights.error}
+                  />
+                  <SharePanel username={data.profile.login} />
+                </div>
+
+                <CompareView
+                  defaultA={loadedLogin ?? username ?? ''}
+                  initial={comparePair}
+                  onCompared={(a, b) => setComparePair([a, b])}
+                />
+              </section>
+            )}
           </div>
         )}
       </main>
