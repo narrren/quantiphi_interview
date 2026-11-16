@@ -14,7 +14,16 @@ chart, and a **Tech Stack Compatibility** score against any job description.
 | | **Profile Header** — avatar, bio, followers, following, total stars, forks, repos, **Top Languages donut chart** |
 | Backend | **GitHub API integration** — REST v3 for profile + repositories; GraphQL v4 contribution calendar when `GITHUB_TOKEN` is set, public contribution calendar otherwise |
 | | **SQLite caching engine** — repository metadata, profile, contributions and user settings cached locally with a configurable TTL; stale cache is served if GitHub is rate-limited or unreachable |
-| Vibe Check | **Tech Stack Compatibility** — paste a job description; the backend extracts tech keywords (≈50-entry taxonomy with aliases, e.g. `golang`, `reactjs`, `c#`) and compares them against the languages/topics of the user's cached repos → **Match Percentage badge** at the top of the profile with matched / missing skills and evidence repos |
+| Vibe Check | **Tech Stack Compatibility** — paste a job description; the backend extracts tech keywords (60+ technology taxonomy with aliases, e.g. `golang`, `reactjs`, `c#`) and compares them against the languages/topics of the user's cached repos → **Match Percentage badge** at the top of the profile with matched / missing skills and evidence repos |
+
+### Advanced features
+
+| Feature | Why it matters |
+|---|---|
+| **Developer Insights** | Weekday coding rhythm, 12-month contribution trend, consistency %, average per active day and a 30-day momentum indicator — recruiters see *how* someone codes, not just how much |
+| **Portfolio Readiness Score** | 0–100 score with a checklist (bio, website, descriptions, topics, licenses, recent activity, popular project, consistency), per-repo health scores and concrete "how to improve" actions — turns the dashboard into a personal-branding coach |
+| **Compare Developers** | Head-to-head view of two GitHub users across 7 metrics with leaders, shared languages and a summary — useful for hiring shortlists |
+| **Share & Embed badges** | Live SVG badges (`/api/badge/{user}?metric=stars`) for stars, followers, contributions, streak and top language, embeddable in any README, plus deep links (`?user=`, `?compare=a,b`) |
 
 ## Architecture
 
@@ -26,9 +35,10 @@ quantiphi_interview/
 │   │   ├── core/                config, SQLite connection + schema, domain errors
 │   │   ├── repositories/        Data-access layer (SQLite): cache, settings
 │   │   ├── services/            Business logic: GitHub client, contributions + streaks,
-│   │   │                        portfolio aggregation/caching, match scoring
+│   │   │                        portfolio aggregation/caching, match scoring,
+│   │   │                        insights + readiness, comparison, badge rendering
 │   │   ├── schemas/             Pydantic request/response models + validation
-│   │   └── routers/             Thin HTTP layer: portfolio, settings, match
+│   │   └── routers/             Thin HTTP layer: portfolio, settings, match, insights, compare, badge
 │   └── tests/                   pytest unit + API tests (no network)
 ├── frontend/                    React 18 + TypeScript + Vite (presentation only)
 │   └── src/{api,components,hooks,types.ts}
@@ -73,6 +83,9 @@ http://localhost:8000.
 | GET | `/api/portfolio/{username}?refresh=false` | Profile, stats, top languages, repos, contributions + streaks (cached) |
 | GET / PUT | `/api/settings` | User settings (default username, theme, cache TTL, last JD) |
 | POST | `/api/match` | Tech Stack Compatibility score for a job description |
+| GET | `/api/insights/{username}` | Developer Insights + Portfolio Readiness score |
+| GET | `/api/compare?users=a,b` | Compare two developers |
+| GET | `/api/badge/{username}?metric=stars` | Embeddable SVG badge |
 
 Full shapes: [docs/API_CONTRACT.md](docs/API_CONTRACT.md). Interactive docs: `http://localhost:8000/docs`.
 
