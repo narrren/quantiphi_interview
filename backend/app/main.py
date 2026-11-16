@@ -51,6 +51,15 @@ app.include_router(badge.router, prefix="/api")
 if settings.frontend_dist.is_dir():
     app.mount("/assets", StaticFiles(directory=settings.frontend_dist / "assets"), name="assets")
 
+    dist_root = settings.frontend_dist.resolve()
+
     @app.get("/{full_path:path}", include_in_schema=False)
     def spa(full_path: str) -> FileResponse:
-        return FileResponse(settings.frontend_dist / "index.html")
+        # Unknown API routes must stay JSON 404s, not fall through to the SPA.
+        if full_path == "api" or full_path.startswith("api/"):
+            raise AppError("Not Found", status_code=404)
+        # Serve real top-level build files (e.g. favicon.svg) without escaping dist/.
+        candidate = (dist_root / full_path).resolve()
+        if full_path and candidate.is_file() and candidate.is_relative_to(dist_root):
+            return FileResponse(candidate)
+        return FileResponse(dist_root / "index.html")
