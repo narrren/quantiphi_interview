@@ -88,6 +88,7 @@ def test_repositories_sorted_and_enriched(github: FakeGitHub) -> None:
     assert set(repos[0]) == {
         "id", "name", "full_name", "description", "html_url", "stars", "forks",
         "language", "language_color", "topics", "updated_at", "is_fork",
+        "license", "homepage", "archived", "open_issues",
     }
 
 

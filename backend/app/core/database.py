@@ -27,6 +27,10 @@ CREATE TABLE IF NOT EXISTS repositories (
     topics      TEXT NOT NULL DEFAULT '[]',   -- JSON array
     updated_at  TEXT,
     is_fork     INTEGER NOT NULL DEFAULT 0,
+    license     TEXT,
+    homepage    TEXT,
+    archived    INTEGER NOT NULL DEFAULT 0,
+    open_issues INTEGER NOT NULL DEFAULT 0,
     fetched_at  REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_repositories_username ON repositories(username);
@@ -53,11 +57,28 @@ CREATE TABLE IF NOT EXISTS settings (
 
 """
 
+# Columns added after the initial schema; applied to existing databases by init_db().
+REPOSITORY_MIGRATIONS: dict[str, str] = {
+    "license": "TEXT",
+    "homepage": "TEXT",
+    "archived": "INTEGER NOT NULL DEFAULT 0",
+    "open_issues": "INTEGER NOT NULL DEFAULT 0",
+}
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Add any missing repository columns so older cache databases keep working."""
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(repositories)")}
+    for column, definition in REPOSITORY_MIGRATIONS.items():
+        if column not in existing:
+            conn.execute(f"ALTER TABLE repositories ADD COLUMN {column} {definition}")
+
 
 def init_db() -> None:
     settings.db_path.parent.mkdir(parents=True, exist_ok=True)
     with get_connection() as conn:
         conn.executescript(SCHEMA)
+        _migrate(conn)
 
 
 @contextmanager

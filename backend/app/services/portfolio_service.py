@@ -75,7 +75,21 @@ def normalize_repository(raw: dict[str, Any]) -> dict[str, Any]:
         "topics": list(raw.get("topics") or []),
         "updated_at": raw.get("updated_at"),
         "is_fork": bool(raw.get("fork")),
+        "license": _license_name(raw.get("license")),
+        "homepage": raw.get("homepage") or None,
+        "archived": bool(raw.get("archived")),
+        "open_issues": int(raw.get("open_issues_count") or 0),
     }
+
+
+def _license_name(raw_license: dict[str, Any] | None) -> str | None:
+    """SPDX id of the repo license (unless NOASSERTION), else its name, else None."""
+    if not raw_license:
+        return None
+    spdx = raw_license.get("spdx_id")
+    if spdx and spdx != "NOASSERTION":
+        return spdx
+    return raw_license.get("name") or None
 
 
 def sort_repositories(repositories: list[dict[str, Any]]) -> list[dict[str, Any]]:

@@ -25,13 +25,16 @@ def save_snapshot(
         conn.executemany(
             """INSERT OR REPLACE INTO repositories
                (id, username, name, full_name, description, html_url, stars, forks,
-                language, topics, updated_at, is_fork, fetched_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                language, topics, updated_at, is_fork, license, homepage, archived,
+                open_issues, fetched_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             [
                 (
                     r["id"], username, r["name"], r["full_name"], r["description"],
                     r["html_url"], r["stars"], r["forks"], r["language"],
-                    json.dumps(r["topics"]), r["updated_at"], int(r["is_fork"]), fetched_at,
+                    json.dumps(r["topics"]), r["updated_at"], int(r["is_fork"]),
+                    r.get("license"), r.get("homepage"), int(bool(r.get("archived"))),
+                    int(r.get("open_issues") or 0), fetched_at,
                 )
                 for r in repositories
             ],
@@ -83,6 +86,10 @@ def load_snapshot(username: str) -> dict[str, Any] | None:
             "topics": json.loads(row["topics"]),
             "updated_at": row["updated_at"],
             "is_fork": bool(row["is_fork"]),
+            "license": row["license"],
+            "homepage": row["homepage"] or None,
+            "archived": bool(row["archived"]),
+            "open_issues": int(row["open_issues"] or 0),
         }
         for row in repo_rows
     ]

@@ -53,6 +53,10 @@ class Repository(BaseModel):
     topics: list[str]
     updated_at: str | None = None
     is_fork: bool
+    license: str | None = None
+    homepage: str | None = None
+    archived: bool = False
+    open_issues: int = 0
 
 
 class ContributionDay(BaseModel):
