@@ -59,6 +59,8 @@ export default function App() {
   const [match, setMatch] = useState<MatchResult | null>(null);
   const { data, loading, refreshing, error, status, reload } = usePortfolio(username);
   const loadedLogin = data?.profile.login ?? null;
+  const loginRef = useRef(loadedLogin);
+  loginRef.current = loadedLogin;
   // Advanced insights are fetched lazily, only once the advanced section is opened.
   const insights = useInsights(showAdvanced ? loadedLogin : null);
 
@@ -108,6 +110,7 @@ export default function App() {
         void insights.reload(false);
       } else {
         setMatch(null);
+        setComparePair(null);
         setUsername(next);
       }
     },
@@ -159,7 +162,10 @@ export default function App() {
               jobDescription={jobDescription}
               onJobDescriptionChange={setJobDescription}
               result={match}
-              onResult={setMatch}
+              onResult={(result, forUser) => {
+                // Ignore late results computed for a previously loaded user.
+                if (!result || !forUser || forUser === loginRef.current) setMatch(result);
+              }}
             />
 
             <RepoGrid repos={data.repositories} />

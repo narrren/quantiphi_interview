@@ -24,7 +24,8 @@ export function useInsights(username: string | null) {
         setState({ data, loading: false, error: null });
       } catch (err) {
         if (id !== reqId.current) return;
-        setState({ data: null, loading: false, error: errorMessage(err) });
+        // Keep previously loaded insights if only a refresh failed.
+        setState((s) => ({ data: refresh ? s.data : null, loading: false, error: errorMessage(err) }));
       }
     },
     [username],

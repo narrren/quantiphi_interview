@@ -250,7 +250,7 @@ def compute_readiness(
         (f"Push a recent update to one of your key projects (e.g. {_examples(stale_top)}) to show active work."
          if stale_top else "Create and push a new original project to show recent activity."))
 
-    best = max(repositories, key=lambda r: int(r.get("stars") or 0), default=None)
+    best = max(owned, key=lambda r: int(r.get("stars") or 0), default=None)
     best_stars = int(best.get("stars") or 0) if best else 0
     popular = best_stars >= POPULAR_STARS
     add({"id": "popular_project", "label": f"A project has at least {POPULAR_STARS} stars",

@@ -67,7 +67,7 @@ export function ReadinessPanel({ readiness, loading, error }: Props) {
             <ul className="checklist">
               {readiness.checks.map((c) => (
                 <li key={c.id} className={c.passed ? 'check-ok' : 'check-fail'}>
-                  <span className="check-icon" aria-label={c.passed ? 'Passed' : 'Failed'}>
+                  <span className="check-icon" role="img" aria-label={c.passed ? 'Passed' : 'Failed'}>
                     {c.passed ? <CheckIcon size={12} /> : <CloseIcon size={12} />}
                   </span>
                   <div className="min0">

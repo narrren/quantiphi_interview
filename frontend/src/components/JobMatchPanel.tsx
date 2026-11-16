@@ -9,7 +9,7 @@ interface Props {
   jobDescription: string;
   onJobDescriptionChange: (jd: string) => void;
   result: MatchResult | null;
-  onResult: (r: MatchResult | null) => void;
+  onResult: (r: MatchResult | null, forUser?: string) => void;
 }
 
 const MAX_CHARS = 20000;
@@ -23,7 +23,8 @@ export function JobMatchPanel({ username, jobDescription, onJobDescriptionChange
     setLoading(true);
     setError(null);
     try {
-      onResult(await api.match(username, jobDescription));
+      // Tag the result with the user it was computed for, so a late reply can't land on another profile.
+      onResult(await api.match(username, jobDescription), username);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -59,7 +60,7 @@ export function JobMatchPanel({ username, jobDescription, onJobDescriptionChange
                 Clear result
               </button>
             )}
-            <button type="submit" className="btn btn-primary" disabled={loading || !jobDescription.trim()}>
+            <button type="submit" className="btn btn-primary" disabled={loading || !jobDescription.trim() || jobDescription.length > MAX_CHARS}>
               {loading ? <span className="spinner" aria-hidden /> : null}
               {loading ? 'Analyzing…' : 'Analyze'}
             </button>
